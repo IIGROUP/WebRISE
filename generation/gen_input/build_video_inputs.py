@@ -17,7 +17,7 @@ For each task:
   7. Save Video/input.json     (video-only model prompt paired with the recorded video)
 
 Usage:
-  python build_video_inputs.py                       # all tasks under the data root
+  python build_video_inputs.py --data-root path/to/dataset/data
   python build_video_inputs.py D04_S23_T298          # specific task(s)
   python build_video_inputs.py --input-only          # only write Video/input.json
   python build_video_inputs.py --dry-run             # print chain without recording
@@ -41,11 +41,8 @@ from collections import defaultdict
 from pathlib import Path
 
 SCRIPT_DIR   = Path(__file__).resolve().parent
-RELEASE_ROOT = SCRIPT_DIR.parents[2]
-SEED_ROOT    = Path(os.environ.get("SEED_ROOT", RELEASE_ROOT / "data_release"))
-_DEFAULT_GT_HTML_ROOT = SEED_ROOT
-GT_HTML_ROOT = Path(os.environ.get("GT_HTML_ROOT", _DEFAULT_GT_HTML_ROOT))
-REQ_JSON     = Path(os.environ.get("REQ_JSON", RELEASE_ROOT / "data_release" / "requirements_full.json"))
+DEFAULT_DATA_ROOT = os.environ.get("WEBRISE_DATA_ROOT")
+DEFAULT_GT_HTML_ROOT = os.environ.get("GT_HTML_ROOT") or DEFAULT_DATA_ROOT
 
 # Reuse executor from code_release/evaluation/
 EVAL_DIR = SCRIPT_DIR.parents[1] / "evaluation"
@@ -357,32 +354,6 @@ def load_trajectory(run_dir: Path, tid: str) -> list[dict]:
     return steps
 
 
-# ── Requirements helpers ──────────────────────────────────────────────────────
-
-def load_req_map() -> dict[str, dict]:
-    if not REQ_JSON.exists():
-        return {}
-    data = json.loads(REQ_JSON.read_text(encoding="utf-8"))
-    out: dict[str, dict] = {}
-    for dom in data.get("domains", []):
-        did = dom.get("domain_id")
-        for sc in dom.get("scenarios", []):
-            sid = sc.get("scenario_id")
-            for t in sc.get("tasks", []):
-                fid = t.get("full_task_id")
-                if not fid:
-                    tid_int = t.get("task_id")
-                    if None in (did, sid, tid_int):
-                        continue
-                    fid = f"D{int(did):02d}_S{int(sid):02d}_T{int(tid_int):03d}"
-                out[fid] = {
-                    "task_name": t.get("task_name") or "",
-                    "scenario":  sc.get("scenario") or "",
-                    "reqs":      t.get("requirements", []),
-                }
-    return out
-
-
 def _humanize(s: str) -> str:
     return (s or "").replace("_", " ").strip()
 
@@ -410,9 +381,9 @@ def requirement_ids(icg: dict, intent: str | None = "explicit") -> set[str]:
     return ids
 
 
-def build_input_json(task_id: str, icg: dict, req_entry: dict) -> dict:
-    task_name_human = _humanize(req_entry.get("task_name") or icg.get("task_name", ""))
-    scenario_human  = _humanize(req_entry.get("scenario") or icg.get("scenario", ""))
+def build_input_json(task_id: str, icg: dict) -> dict:
+    task_name_human = _humanize(icg.get("task_name", "")) or task_id
+    scenario_human  = _humanize(icg.get("scenario", "")) or "web application"
 
     first  = f"Please implement a {task_name_human} webpage in a {scenario_human} scenario."
     video_only_user_prompt = (
@@ -429,10 +400,10 @@ def build_input_json(task_id: str, icg: dict, req_entry: dict) -> dict:
     }
 
 
-def save_video_input_json(task_id: str, task_dir: Path, icg: dict, req_map: dict) -> Path:
+def save_video_input_json(task_id: str, task_dir: Path, icg: dict) -> Path:
     video_dir = task_dir / "Video"
     video_dir.mkdir(parents=True, exist_ok=True)
-    payload = build_input_json(task_id, icg, req_map.get(task_id, {}))
+    payload = build_input_json(task_id, icg)
     out_path = video_dir / "input.json"
     out_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return out_path
@@ -471,7 +442,7 @@ def find_eval_html(run_dir: Path) -> Path | None:
 
 
 def find_seed_html(task_dir: Path) -> Path | None:
-    """Find the task HTML copied into a seeddata task directory."""
+    """Find the task HTML copied into a task directory."""
     htmls = sorted(task_dir.glob("*.html"))
     if htmls:
         return htmls[0]
@@ -954,8 +925,7 @@ async def replay_and_record(
 
 async def process_task(
     task_id: str,
-    req_map: dict,
-    seed_root: Path,
+    data_root: Path,
     gt_html_root: Path,
     html_source: str = "eval",
     passed_only: bool = False,
@@ -965,7 +935,7 @@ async def process_task(
     extract_fps: float = 0,
     input_only: bool = False,
 ) -> tuple[bool, str]:
-    task_dir  = seed_root / task_id
+    task_dir  = data_root / task_id
     icg_path  = task_dir / "icg.json"
     video_dir = task_dir / "Video"
 
@@ -975,7 +945,7 @@ async def process_task(
     icg   = json.loads(icg_path.read_text(encoding="utf-8"))
 
     if input_only:
-        out_path = save_video_input_json(task_id, task_dir, icg, req_map)
+        out_path = save_video_input_json(task_id, task_dir, icg)
         return True, f"input written -> {out_path}"
 
     chain = best_coverage_chain(icg.get("transitions", []), icg=icg)
@@ -1042,7 +1012,7 @@ async def process_task(
     already_done = (video_dir / f"{task_id}_chain.mp4").exists() or \
                    (video_dir / f"{task_id}_chain.webm").exists()
     if not force and already_done:
-        input_path = save_video_input_json(task_id, task_dir, icg, req_map)
+        input_path = save_video_input_json(task_id, task_dir, icg)
         if extract_fps > 0:
             existing_video = (
                 video_dir / f"{task_id}_chain.mp4"
@@ -1105,7 +1075,7 @@ async def process_task(
         json.dumps(coverage, indent=2, ensure_ascii=False), encoding="utf-8"
     )
 
-    save_video_input_json(task_id, task_dir, icg, req_map)
+    save_video_input_json(task_id, task_dir, icg)
 
     return True, f"done  chain={chain_ids}"
 
@@ -1126,10 +1096,11 @@ def main() -> None:
                     help="Extra pause between transitions in ms (default: 800)")
     ap.add_argument("--extract-fps", type=float, default=0,
                     help="If > 0, extract frames from each recorded video at this fps")
-    ap.add_argument("--seed-root", default=str(SEED_ROOT),
-                    help="Data root containing task folders")
-    ap.add_argument("--gt-html-root", default=str(GT_HTML_ROOT),
-                    help="GT HTML root")
+    ap.add_argument("--data-root", dest="data_root",
+                    default=DEFAULT_DATA_ROOT,
+                    help="Task data root containing task folders. Can also be set with WEBRISE_DATA_ROOT.")
+    ap.add_argument("--gt-html-root", default=DEFAULT_GT_HTML_ROOT,
+                    help="Optional GT HTML root. Defaults to the task data root.")
     ap.add_argument("--html-source", choices=("eval", "gt", "seed"), default="eval",
                     help="HTML to replay against: eval = source agent_eval HTML (default), gt = configured GT root, seed = HTML inside each task dir")
     ap.add_argument("--passed-only", action="store_true",
@@ -1138,16 +1109,26 @@ def main() -> None:
                     help="Only write Video/input.json; do not select/replay/record a video")
     args = ap.parse_args()
 
-    seed_root = Path(args.seed_root)
-    gt_html_root = Path(args.gt_html_root)
+    if not args.data_root:
+        ap.error("--data-root is required unless WEBRISE_DATA_ROOT is set.")
+    data_root = Path(args.data_root).expanduser()
+    data_root = data_root if data_root.is_absolute() else (Path.cwd() / data_root)
+    data_root = data_root.resolve()
+    if not data_root.exists():
+        ap.error(f"data root not found: {data_root}")
+
+    if args.gt_html_root:
+        gt_html_root = Path(args.gt_html_root).expanduser()
+        gt_html_root = gt_html_root if gt_html_root.is_absolute() else (Path.cwd() / gt_html_root)
+        gt_html_root = gt_html_root.resolve()
+    else:
+        gt_html_root = data_root
 
     if args.task_ids:
         task_ids = args.task_ids
     else:
-        task_ids = sorted(p.name for p in seed_root.iterdir()
+        task_ids = sorted(p.name for p in data_root.iterdir()
                           if p.is_dir() and (p / "icg.json").exists())
-
-    req_map = load_req_map()
 
     ok = fail = 0
     for task_id in task_ids:
@@ -1155,8 +1136,7 @@ def main() -> None:
         try:
             success, msg = asyncio.run(process_task(
                 task_id=task_id,
-                req_map=req_map,
-                seed_root=seed_root,
+                data_root=data_root,
                 gt_html_root=gt_html_root,
                 html_source=args.html_source,
                 passed_only=args.passed_only,

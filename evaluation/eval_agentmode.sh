@@ -3,12 +3,7 @@
 # artifact and one Interaction Contract Graph.
 #
 # Usage:
-#   ./eval_agentmode.sh [HTML_PATH] [ICG_PATH]
-#
-# Example:
-#   ./eval_agentmode.sh \
-#     ../data_release/D01_S01_T003/Search_Result_Tabs.html \
-#     ../data_release/D01_S01_T003/icg.json
+#   ./eval_agentmode.sh HTML_PATH ICG_PATH [OUTPUT_DIR]
 
 set -euo pipefail
 
@@ -25,13 +20,18 @@ fi
 
 export WEB_EVAL_API_KEY="${WEB_EVAL_API_KEY:-${OPENAI_API_KEY:-}}"
 export WEB_EVAL_BASE_URL="${WEB_EVAL_BASE_URL:-${OPENAI_BASE_URL:-https://api.openai.com/v1}}"
-export WEB_EVAL_MODEL_AGENT="${WEB_EVAL_MODEL_AGENT:-gpt-5-mini}"
-export WEB_EVAL_MODEL_SCORER="${WEB_EVAL_MODEL_SCORER:-gpt-5-mini}"
-export WEB_EVAL_REASONING_EFFORT="${WEB_EVAL_REASONING_EFFORT:-low}"
+export WEB_EVAL_MODEL_AGENT="${WEB_EVAL_MODEL_AGENT:-}"
+export WEB_EVAL_MODEL_SCORER="${WEB_EVAL_MODEL_SCORER:-}"
+export WEB_EVAL_REASONING_EFFORT="${WEB_EVAL_REASONING_EFFORT:-}"
 
-HTML_PATH="${1:-$RELEASE_ROOT/../data_release/D01_S01_T003/Search_Result_Tabs.html}"
-ICG_PATH="${2:-$RELEASE_ROOT/../data_release/D01_S01_T003/icg.json}"
-OUTPUT_DIR="${OUTPUT_DIR:-$RELEASE_ROOT/eval_results}"
+if [[ $# -lt 2 ]]; then
+    echo "Usage: $0 HTML_PATH ICG_PATH [OUTPUT_DIR]" >&2
+    exit 2
+fi
+
+HTML_PATH="$1"
+ICG_PATH="$2"
+OUTPUT_DIR="${3:-${OUTPUT_DIR:-$RELEASE_ROOT/eval_results}}"
 
 python3 -u "$SCRIPT_DIR/eval_agentmode.py" \
     --html "$HTML_PATH" \

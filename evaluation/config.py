@@ -30,17 +30,17 @@ def get_credentials() -> tuple[str, str]:
 
 
 # Model used by the contract-guided browser agent.
-MODEL_AGENT = os.environ.get("WEB_EVAL_MODEL_AGENT", "gpt-5-mini")
+MODEL_AGENT = os.environ.get("WEB_EVAL_MODEL_AGENT", "").strip()
 
 # Model used for postcondition scoring (vision with before/after screenshots)
-MODEL_SCORER  = os.environ.get("WEB_EVAL_MODEL_SCORER",  "gpt-5-mini")
+MODEL_SCORER  = os.environ.get("WEB_EVAL_MODEL_SCORER", "").strip()
 
 # Reasoning effort for models that support the OpenAI-compatible parameter.
 # Set WEB_EVAL_REASONING_EFFORT=off to omit it, or use low/medium/high/etc.
-REASONING_EFFORT = os.environ.get("WEB_EVAL_REASONING_EFFORT", "low").strip()
+REASONING_EFFORT = os.environ.get("WEB_EVAL_REASONING_EFFORT", "").strip()
 REASONING_EFFORT_MODEL_PREFIXES = tuple(
     p.strip().lower()
-    for p in os.environ.get("WEB_EVAL_REASONING_EFFORT_MODELS", "gpt-5").split(",")
+    for p in os.environ.get("WEB_EVAL_REASONING_EFFORT_MODELS", "").split(",")
     if p.strip()
 )
 

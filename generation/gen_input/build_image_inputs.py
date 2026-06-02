@@ -9,9 +9,9 @@ Steps:
   all         run all steps in order
 
 Usage:
-  python build_image_inputs.py --dir data_release
-  python build_image_inputs.py D01_S01_T003 --dir data_release --force
-  python build_image_inputs.py --step tag --dir data_release
+  python build_image_inputs.py --data-root path/to/dataset/data
+  python build_image_inputs.py TASK_ID --data-root path/to/dataset/data --force
+  python build_image_inputs.py --step tag --data-root path/to/dataset/data
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ import shutil
 import sys
 from pathlib import Path
 
-SEEDDATA = Path(__file__).resolve().parents[3] / "data_release"
+DEFAULT_DATA_ROOT = os.environ.get("WEBRISE_DATA_ROOT")
 
 API_KEY = (
     os.environ.get("OPENAI_API_KEY", "").strip()
@@ -34,7 +34,7 @@ API_KEY = (
 BASE_URL = (
     os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").strip()
 )
-DEFAULT_MODEL = os.environ.get("WEBRISE_IMAGE_MODEL", "gemini-3.1-pro-preview")
+DEFAULT_MODEL = os.environ.get("WEBRISE_IMAGE_MODEL", "").strip()
 
 TARGET_NAME = "Image"
 
@@ -140,9 +140,9 @@ def _candidate_screenshots(screenshots_dir: Path, max_n: int) -> list[Path]:
     return [candidates[i] for i in idxes]
 
 
-def _call_gemini(client, model: str, system: str,
-                 image_parts: list[dict], text: str,
-                 max_tokens: int = 8192) -> str | None:
+def _call_vlm(client, model: str, system: str,
+              image_parts: list[dict], text: str,
+              max_tokens: int = 8192) -> str | None:
     messages = [
         {"role": "system", "content": system},
         {
@@ -257,7 +257,7 @@ def step_select(task_dir: Path, task_id: str,
 
     from openai import OpenAI
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
-    raw = _call_gemini(client, model, _SELECT_SYSTEM, image_parts, user_text)
+    raw = _call_vlm(client, model, _SELECT_SYSTEM, image_parts, user_text)
     if raw is None:
         print(f"    [ERROR] select API call failed")
         return None
@@ -428,7 +428,7 @@ def step_tag(task_dir: Path, task_id: str,
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
     result = None
     for attempt in range(1, 4):
-        raw = _call_gemini(client, model, _TAG_SYSTEM, image_parts, user_text)
+        raw = _call_vlm(client, model, _TAG_SYSTEM, image_parts, user_text)
         if raw is None:
             continue
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
@@ -573,9 +573,11 @@ def main():
                         choices=["select", "screenshot", "tag", "input", "all"],
                         help="Pipeline step to run; default: all")
     parser.add_argument("--model", default=DEFAULT_MODEL,
-                        help=f"Vision-language model; default: {DEFAULT_MODEL}")
-    parser.add_argument("--dir", default=str(SEEDDATA),
-                        help="Task data root")
+                        help="Vision-language model. Can also be set with WEBRISE_IMAGE_MODEL.")
+    parser.add_argument("--data-root", dest="data_root",
+                        default=DEFAULT_DATA_ROOT,
+                        help="Task data root containing task folders. Can also be set with WEBRISE_DATA_ROOT.")
+    parser.add_argument("--dir", dest="data_root", help=argparse.SUPPRESS)
     parser.add_argument("--dry-run", action="store_true",
                         help="Preview without writing files")
     parser.add_argument("--force", action="store_true",
@@ -584,9 +586,13 @@ def main():
                         help="Number of parallel workers; default: 4")
     args = parser.parse_args()
 
-    seeddata = Path(args.dir)
-    if not seeddata.exists():
-        print(f"ERROR: dir not found: {seeddata}")
+    if not args.data_root:
+        parser.error("--data-root is required unless WEBRISE_DATA_ROOT is set.")
+    data_root = Path(args.data_root).expanduser()
+    data_root = data_root if data_root.is_absolute() else (Path.cwd() / data_root)
+    data_root = data_root.resolve()
+    if not data_root.exists():
+        print(f"ERROR: data root not found: {data_root}")
         sys.exit(1)
 
     steps = (
@@ -598,19 +604,19 @@ def main():
     if args.task_ids:
         task_dirs = []
         for tid in args.task_ids:
-            td = seeddata / tid
+            td = data_root / tid
             if not td.is_dir():
                 print(f"ERROR: task dir not found: {td}")
             else:
                 task_dirs.append(td)
     else:
-        task_dirs = sorted([d for d in seeddata.iterdir() if d.is_dir()])
+        task_dirs = sorted([d for d in data_root.iterdir() if d.is_dir()])
 
     if not task_dirs:
         print("ERROR: no task dirs found")
         sys.exit(1)
 
-    print(f"seeddata={seeddata}")
+    print(f"data_root={data_root}")
     print(f"target={TARGET_NAME}  steps={steps}  dry_run={args.dry_run}  tasks={len(task_dirs)}\n")
 
     ok_count = fail_count = 0

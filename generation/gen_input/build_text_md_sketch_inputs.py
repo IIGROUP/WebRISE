@@ -343,22 +343,22 @@ def main():
                         help="Only process these task ids, e.g. D08_S28_T501 D08_S28_T502")
     parser.add_argument("--workers", type=int, default=4,
                         help="Max parallel workers (default: 4)")
-    parser.add_argument("--seed-root", default="../../data_release",
-                        help="Task data root.")
+    parser.add_argument("--data-root", dest="data_root",
+                        default=os.environ.get("WEBRISE_DATA_ROOT"),
+                        help="Task data root containing task folders. Can also be set with WEBRISE_DATA_ROOT.")
     parser.add_argument("--force", action="store_true",
                         help="Regenerate existing screenshots, modality input.json files, sketches, and markdown files")
     args = parser.parse_args()
     task_ids = set(args.tasks) if args.tasks else None
     workers = args.workers
 
-    base_dir = Path(__file__).resolve().parent.parent
-    seed_root_arg = Path(args.seed_root)
-    if seed_root_arg.is_absolute():
-        input_root = seed_root_arg
-    elif seed_root_arg.exists():
-        input_root = seed_root_arg
-    else:
-        input_root = base_dir / seed_root_arg
+    if not args.data_root:
+        parser.error("--data-root is required unless WEBRISE_DATA_ROOT is set.")
+    data_root_arg = Path(args.data_root).expanduser()
+    input_root = data_root_arg if data_root_arg.is_absolute() else (Path.cwd() / data_root_arg)
+    input_root = input_root.resolve()
+    if not input_root.exists():
+        parser.error(f"data root not found: {input_root}")
     screenshot_dir = Path(__file__).resolve().parent / "input_img"
     target_root = input_root
 
@@ -368,8 +368,8 @@ def main():
     base_url = (
         os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").strip()
     )
-    sketch_model = os.environ.get("WEBRISE_SKETCH_MODEL", "nano-banana-pro")
-    md_model = os.environ.get("WEBRISE_MD_MODEL", "gpt-5-mini")
+    sketch_model = os.environ.get("WEBRISE_SKETCH_MODEL", "").strip()
+    md_model = os.environ.get("WEBRISE_MD_MODEL", "").strip()
 
     sketch_prompt = """
     You are a layout abstraction engine for image-to-image transformation.
