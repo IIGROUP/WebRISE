@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WebRISE</title>
+    <meta
+      name="description"
+      content="WebRISE evaluates MLLM-generated web artifacts through requirement-induced states, transitions, and DOM/visual assertions."
+    >
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232f64c8'/%3E%3Cpath d='M15 19h34v26H15z' fill='white'/%3E%3Cpath d='M21 27h11M21 34h22M21 41h15' stroke='%232f64c8' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='47' cy='19' r='7' fill='%23c64e45'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css">
+    <style>
+:root {
+  color-scheme: light;
+  --bg: #f6f8fb;
+  --surface: #ffffff;
+  --surface-strong: #eef4f2;
+  --ink: #172033;
+  --muted: #5a6475;
+  --line: #d9e0ea;
+  --blue: #2f64c8;
+  --blue-dark: #1d4593;
+  --teal: #147a68;
+  --coral: #c64e45;
+  --gold: #b47a1c;
+  --purple: #6d57b8;
+  --shadow: 0 18px 50px rgba(23, 32, 51, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.6;
+  letter-spacing: 0;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+.container {
+  width: min(1120px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 0 28px;
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+}
+
+.brand {
+  font-size: 1.05rem;
+  font-weight: 800;
+  text-decoration: none;
+  color: var(--blue-dark);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.nav-links a {
+  text-decoration: none;
+}
+
+.nav-links a:hover,
+.nav-links a:focus-visible {
+  color: var(--blue-dark);
+}
+
+.hero {
+  position: relative;
+  min-height: 560px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  background: #f7fafc;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  width: min(1120px, calc(100% - 40px));
+  padding: 56px 0 58px;
+}
+
+.eyebrow,
+.section-kicker {
+  margin: 0 0 14px;
+  color: var(--teal);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  max-width: 1120px;
+  margin-bottom: 24px;
+  font-size: 3rem;
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+h1 span {
+  display: block;
+}
+
+h2 {
+  margin-bottom: 14px;
+  font-size: 2.4rem;
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+h3 {
+  margin-bottom: 10px;
+  font-size: 1.18rem;
+  line-height: 1.25;
+}
+
+.hero-lead {
+  max-width: 1080px;
+  margin-bottom: 26px;
+  color: #394456;
+  font-size: 1.22rem;
+  line-height: 1.55;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 44px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  background: var(--blue);
+  color: #ffffff;
+  font-weight: 750;
+  text-decoration: none;
+  box-shadow: 0 12px 26px rgba(47, 100, 200, 0.22);
+}
+
+.button:hover,
+.button:focus-visible {
+  background: var(--blue-dark);
+  border-color: var(--blue-dark);
+  transform: translateY(-1px);
+}
+
+.button.primary {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #ffffff;
+}
+
+.button i {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.button-logo {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.arxiv-button i {
+  color: #ffffff;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 1120px;
+}
+
+.stat-tile {
+  min-height: 112px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 10px 28px rgba(23, 32, 51, 0.08);
+}
+
+.stat-tile strong {
+  display: block;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.stat-tile span {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.94rem;
+  font-weight: 650;
+}
+
+.section {
+  padding: 88px 0;
+  background: var(--surface);
+}
+
+.section-contrast {
+  background: var(--surface-strong);
+}
+
+.section-heading {
+  max-width: 790px;
+  margin-bottom: 34px;
+}
+
+.section-heading.narrow {
+  max-width: 690px;
+}
+
+.section-heading p,
+.split-layout p,
+.citation-layout p {
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.media-frame {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.media-frame img {
+  width: 100%;
+  background: #ffffff;
+}
+
+figcaption {
+  padding: 14px 18px 18px;
+  color: var(--muted);
+  font-size: 0.94rem;
+  border-top: 1px solid var(--line);
+}
+
+.figure-frame {
+  margin: 0 auto;
+  max-width: 960px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.figure-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background: #f7fafc;
+}
+
+.figure-link img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  background: #ffffff;
+  border-radius: 6px;
+}
+
+.figure-pair {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.82fr) minmax(420px, 1.18fr);
+  gap: 22px;
+  align-items: stretch;
+}
+
+.figure-pair .figure-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.figure-pair .figure-link {
+  flex: 1;
+}
+
+.intro-figure {
+  max-width: 560px;
+}
+
+.intro-figure .figure-link img {
+  max-height: 560px;
+  object-fit: contain;
+}
+
+.case-figure {
+  max-width: 780px;
+}
+
+.case-figure .figure-link img {
+  width: 100%;
+  max-height: 560px;
+  object-fit: contain;
+}
+
+.pipeline-figure {
+  max-width: 1060px;
+}
+
+.pipeline-figure .figure-link img {
+  width: 100%;
+}
+
+.domain-figure {
+  max-width: 650px;
+}
+
+.domain-figure .figure-link img {
+  max-height: 500px;
+  object-fit: contain;
+}
+
+.feature-grid,
+.findings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.feature-card,
+.finding {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 14px 36px rgba(23, 32, 51, 0.08);
+}
+
+.feature-card {
+  min-height: 248px;
+  padding: 24px;
+}
+
+.feature-card:nth-child(1) {
+  border-top: 5px solid var(--teal);
+}
+
+.feature-card:nth-child(2) {
+  border-top: 5px solid var(--gold);
+}
+
+.feature-card:nth-child(3) {
+  border-top: 5px solid var(--purple);
+}
+
+.feature-index {
+  display: inline-block;
+  margin-bottom: 26px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.feature-card p,
+.finding p {
+  color: var(--muted);
+}
+
+.split-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
+  gap: 42px;
+  align-items: center;
+}
+
+.coverage-list,
+.metric-key {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 30px 0 0;
+}
+
+.coverage-list div,
+.metric-key div {
+  min-height: 96px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.coverage-list dt {
+  margin-bottom: 6px;
+  color: var(--coral);
+  font-size: 1.55rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.coverage-list dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+.metric-key {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0 0 22px;
+}
+
+.metric-key div {
+  min-height: 88px;
+  background: #f7fafc;
+}
+
+.metric-key strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--teal);
+  font-size: 1.1rem;
+  line-height: 1.1;
+}
+
+.metric-key span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.findings-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 28px;
+}
+
+.finding {
+  min-height: 230px;
+  padding: 24px;
+}
+
+.finding strong {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--blue-dark);
+  font-size: 2.15rem;
+  line-height: 1;
+}
+
+.finding span {
+  display: block;
+  min-height: 48px;
+  color: var(--ink);
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.finding p {
+  margin: 16px 0 0;
+  font-size: 0.96rem;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.table-scroll table {
+  width: 100%;
+  min-width: 1020px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.table-scroll th,
+.table-scroll td {
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.table-scroll th {
+  background: #f2f5f9;
+  color: #273247;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.table-scroll tbody tr:hover {
+  background: #f7fafc;
+}
+
+.table-scroll tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.comparison-table .yes {
+  color: var(--teal);
+  font-weight: 900;
+  text-align: center;
+}
+
+.comparison-table .no {
+  color: var(--coral);
+  font-weight: 900;
+  text-align: center;
+}
+
+.comparison-table .ours td {
+  background: #eef7f4;
+  font-weight: 760;
+}
+
+.leaderboard-wrap {
+  margin-top: 10px;
+}
+
+.leaderboard-table {
+  min-width: 1220px;
+  table-layout: fixed;
+}
+
+.leaderboard-table .model-col {
+  width: 210px;
+}
+
+.leaderboard-table .metric-col {
+  width: 56px;
+}
+
+.leaderboard-table .overall-col {
+  width: 76px;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.leaderboard-table thead tr:first-child th {
+  text-align: center;
+}
+
+.leaderboard-table thead tr:first-child th:not(:first-child) {
+  border-left: 1px solid var(--line);
+}
+
+.leaderboard-table thead tr:nth-child(2) th:nth-child(3n + 1) {
+  border-left: 1px solid var(--line);
+}
+
+.leaderboard-table th:first-child,
+.leaderboard-table tbody tr:not(.group-row) td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 210px;
+  background: inherit;
+  text-align: left;
+}
+
+.leaderboard-table thead th:first-child {
+  z-index: 3;
+  background: #f2f5f9;
+}
+
+.leaderboard-table .group-row td {
+  background: #172033;
+  color: #ffffff;
+  font-weight: 850;
+  text-align: left;
+}
+
+.leaderboard-table td.rank-best {
+  font-weight: 900;
+  color: #0f1a2d;
+}
+
+.leaderboard-table td.rank-second {
+  color: #0f1a2d;
+  text-decoration: underline;
+  text-decoration-thickness: 0.09em;
+  text-underline-offset: 0.18em;
+}
+
+.table-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.citation-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(360px, 1.2fr);
+  gap: 42px;
+  align-items: start;
+}
+
+.citation-box {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #101827;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.copy-button {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  min-width: 72px;
+  min-height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.copy-button:hover,
+.copy-button:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+pre {
+  margin: 0;
+  padding: 28px;
+  overflow-x: auto;
+  color: #e9f1ff;
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.site-footer {
+  padding: 28px 0;
+  background: #172033;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.94rem;
+}
+
+.footer-inner span:first-child {
+  color: #ffffff;
+  font-weight: 850;
+}
+
+@media (max-width: 920px) {
+  .hero {
+    min-height: auto;
+  }
+
+  .hero-content {
+    padding: 70px 0 54px;
+  }
+
+  h1 {
+    font-size: 3rem;
+  }
+
+  h2 {
+    font-size: 2rem;
+  }
+
+  .hero-stats,
+  .metric-key,
+  .findings-grid,
+  .feature-grid,
+  .figure-pair,
+  .split-layout,
+  .citation-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .split-layout,
+  .citation-layout {
+    gap: 28px;
+  }
+
+  .finding {
+    min-height: 180px;
+  }
+
+  .intro-figure .figure-link img,
+  .case-figure .figure-link img,
+  .domain-figure .figure-link img {
+    max-height: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .site-header {
+    position: static;
+    padding: 0 20px;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .container {
+    width: min(100% - 28px, 1120px);
+  }
+
+  .hero-content {
+    padding: 52px 0 42px;
+  }
+
+  h1 {
+    font-size: 2.3rem;
+    line-height: 1.08;
+  }
+
+  h1 span {
+    display: inline;
+  }
+
+  .hero-lead {
+    font-size: 1.05rem;
+  }
+
+  .hero-stats,
+  .coverage-list {
+    grid-template-columns: 1fr;
+  }
+
+  .section {
+    padding: 62px 0;
+  }
+
+  .button {
+    width: 100%;
+  }
+
+  pre {
+    padding: 68px 18px 22px;
+    font-size: 0.86rem;
+  }
+
+  .table-scroll th,
+  .table-scroll td {
+    padding: 10px;
+  }
+}
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="WebRISE home">WebRISE</a>
+      <nav class="nav-links" aria-label="Page navigation">
+        <a href="#benchmark">Benchmark</a>
+        <a href="#overview">Overview</a>
+        <a href="#pipeline">Pipeline</a>
+        <a href="#comparison">Comparison</a>
+        <a href="#leaderboard">Leaderboard</a>
+        <a href="#citation">Citation</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="container hero-content">
+          <p class="eyebrow">Web Artifact Evaluation Benchmark</p>
+          <h1 id="hero-title">
+            <span>WebRISE: Requirement-Induced State</span>
+            <span>Evaluation for MLLM-Generated Web Artifacts</span>
+          </h1>
+          <p class="hero-lead">
+            WebRISE tests whether generated webpages actually work by compiling
+            requirements into observable UI states, user-intent transitions, and
+            DOM/visual assertions for browser execution.
+          </p>
+
+          <div class="hero-actions" aria-label="Project links">
+            <a class="button arxiv-button" href="https://arxiv.org/abs/XXXX.XXXXX" target="_blank" rel="noreferrer">
+              <i class="fas fa-file-pdf" aria-hidden="true"></i>
+              arXiv
+            </a>
+            <a class="button github-button" href="https://github.com/IIGROUP/WebRISE" target="_blank" rel="noreferrer">
+              <i class="fab fa-github" aria-hidden="true"></i>
+              GitHub
+            </a>
+            <a class="button hf-button" href="https://huggingface.co/datasets/IIGroup/WebRISE" target="_blank" rel="noreferrer">
+              <img class="button-logo" src="assets/hf-logo.png" alt="" aria-hidden="true">
+              Hugging Face
+            </a>
+          </div>
+
+          <div class="hero-stats" aria-label="Benchmark summary">
+            <div class="stat-tile">
+              <strong>442</strong>
+              <span>tasks</span>
+            </div>
+            <div class="stat-tile">
+              <strong>5</strong>
+              <span>input modalities</span>
+            </div>
+            <div class="stat-tile">
+              <strong>5,495</strong>
+              <span>transitions</span>
+            </div>
+            <div class="stat-tile">
+              <strong>5,271</strong>
+              <span>requirement checks</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="benchmark" class="section">
+        <div class="container split-layout">
+          <div>
+            <p class="section-kicker">Benchmark Coverage</p>
+            <h2>Diverse web tasks with explicit and implicit requirements.</h2>
+            <p>
+              WebRISE spans 8 domains and 35 scenarios. Its contracts cover
+              explicit affordances and implicit state-consistency constraints,
+              allowing errors to be traced back to requirements rather than only
+              local events.
+            </p>
+
+            <dl class="coverage-list">
+              <div>
+                <dt>8</dt>
+                <dd>application domains</dd>
+              </div>
+              <div>
+                <dt>35</dt>
+                <dd>domain scenarios</dd>
+              </div>
+              <div>
+                <dt>2,210</dt>
+                <dd>task-modality instances</dd>
+              </div>
+              <div>
+                <dt>12,441</dt>
+                <dd>DOM/visual assertions</dd>
+              </div>
+            </dl>
+          </div>
+
+          <figure class="figure-frame domain-figure">
+            <div class="figure-link">
+              <img src="assets/domain_distribution.png" alt="Domain distribution figure">
+            </div>
+            <figcaption>Domain and scenario distribution of WebRISE.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="overview" class="section section-contrast">
+        <div class="container">
+          <div class="section-heading">
+            <p class="section-kicker">Overview</p>
+            <h2>Evaluate behavior, not just appearance.</h2>
+            <p>
+              Existing protocols often inspect local evidence: a screenshot, a
+              fixed script, a checkpoint, or an exploration trace. WebRISE turns
+              requirements into Interaction Contract Graphs and verifies the page
+              through adaptive browser interaction.
+            </p>
+          </div>
+
+          <div class="figure-pair">
+            <figure class="figure-frame intro-figure">
+              <div class="figure-link">
+                <img src="assets/intro_v3.png" alt="Overview figure for WebRISE">
+              </div>
+              <figcaption>
+                Requirement-induced evaluation maps explicit and implicit
+                requirements to states, transitions, DOM/visual assertions, and
+                transition-level evidence.
+              </figcaption>
+            </figure>
+
+            <figure class="figure-frame case-figure">
+              <div class="figure-link">
+                <img src="assets/case_main.png" alt="Case study figure">
+              </div>
+              <figcaption>
+                A shopping-cart transition where the failing artifact toggles an
+                item but leaves dependent totals and checkout availability stale.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section id="pipeline" class="section">
+        <div class="container">
+          <div class="section-heading">
+            <p class="section-kicker">Pipeline</p>
+            <h2>From multimodal specifications to executable interaction contracts.</h2>
+            <p>
+              WebRISE constructs one task-level contract shared across Text,
+              Markdown, Sketch, Image, and Video inputs. A contract-guided agent
+              executes each transition and dual DOM/VLM oracles score the evidence.
+            </p>
+          </div>
+
+          <figure class="figure-frame pipeline-figure">
+            <div class="figure-link">
+              <img src="assets/pipeline.png" alt="WebRISE pipeline figure">
+            </div>
+            <figcaption>
+              The ICG specifies what to verify; the adaptive browser agent decides
+              how to realize each transition on the generated page.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="comparison" class="section section-contrast">
+        <div class="container">
+          <div class="section-heading">
+            <p class="section-kicker">Benchmark Comparison</p>
+            <h2>WebRISE adds requirement-induced state semantics.</h2>
+            <p>
+              Compared with prior web generation benchmarks, WebRISE jointly
+              covers multimodal inputs, interaction, visual evidence, safety
+              diagnostics, and explicit plus implicit requirement checks.
+            </p>
+          </div>
+
+          <div class="table-scroll" role="region" aria-label="Comparison with related benchmarks" tabindex="0">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Benchmark</th>
+                  <th>Verified Units</th>
+                  <th>Main Verdict</th>
+                  <th>Interact.</th>
+                  <th>Vision</th>
+                  <th>Safety</th>
+                  <th>Exp. Req</th>
+                  <th>Imp. Req</th>
+                  <th>Input Modality</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>WebCoderBench</td>
+                  <td>1,572 reqs; 24 metrics</td>
+                  <td>Static evaluation</td>
+                  <td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td>
+                  <td>2: Text, Image</td>
+                </tr>
+                <tr>
+                  <td>VibeCodeBench</td>
+                  <td>100 apps; 964 workflows</td>
+                  <td>Browser agent</td>
+                  <td class="yes">✓</td><td class="no">✕</td><td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td>
+                  <td>1: Text</td>
+                </tr>
+                <tr>
+                  <td>Interaction2Code</td>
+                  <td>127 pages; 374 interactions</td>
+                  <td>Human evaluation</td>
+                  <td class="yes">✓</td><td class="yes">✓</td><td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td>
+                  <td>1: Image</td>
+                </tr>
+                <tr>
+                  <td>FrontendBench</td>
+                  <td>148 tasks</td>
+                  <td>Script assertion</td>
+                  <td class="yes">✓</td><td class="no">✕</td><td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td>
+                  <td>1: Text</td>
+                </tr>
+                <tr>
+                  <td>WebGen-Bench</td>
+                  <td>101 instr.; 647 cases</td>
+                  <td>Checkpoint</td>
+                  <td class="yes">✓</td><td class="yes">✓</td><td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td>
+                  <td>1: Text</td>
+                </tr>
+                <tr>
+                  <td>IWR-Bench</td>
+                  <td>113 tasks; 1,001 acts; 403 asserts</td>
+                  <td>MLLM assertion</td>
+                  <td class="yes">✓</td><td class="yes">✓</td><td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td>
+                  <td>1: Video</td>
+                </tr>
+                <tr class="ours">
+                  <td>WebRISE</td>
+                  <td>442 tasks; 5,271 reqs; 5,081 states; 5,495 trans.; 12,441 asserts</td>
+                  <td>DOM/VLM assertion</td>
+                  <td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td>
+                  <td>5: Text, Markdown, Sketch, Image, Video</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="leaderboard" class="section">
+        <div class="container">
+          <div class="section-heading">
+            <p class="section-kicker">Leaderboard</p>
+            <h2>Interactive web generation is still far from solved.</h2>
+            <p>
+              Across 14 MLLMs, even the strongest setting leaves roughly one
+              third of transitions or requirement checks unsatisfied. T denotes
+              transition validity, R denotes requirement coverage, and V denotes
+              auxiliary visual quality.
+            </p>
+          </div>
+
+          <div class="metric-key" aria-label="Leaderboard metric definitions">
+            <div>
+              <strong>T</strong>
+              <span>Transition validity</span>
+            </div>
+            <div>
+              <strong>R</strong>
+              <span>Requirement coverage</span>
+            </div>
+            <div>
+              <strong>V</strong>
+              <span>Auxiliary visual quality</span>
+            </div>
+            <div>
+              <strong>Safety</strong>
+              <span>HTML safety and robustness diagnostics</span>
+            </div>
+          </div>
+
+          <div class="findings-grid">
+            <article class="finding">
+              <strong>442</strong>
+              <span>tasks across five modalities</span>
+              <p>The same contract is tested under Text, Markdown, Sketch, Image, and Video inputs.</p>
+            </article>
+            <article class="finding">
+              <strong>5,495</strong>
+              <span>state transitions</span>
+              <p>Evaluation targets requirement-induced behavior instead of isolated checkpoints.</p>
+            </article>
+            <article class="finding">
+              <strong>5,271</strong>
+              <span>requirement checks</span>
+              <p>Explicit user functions and implicit product-level constraints are scored separately.</p>
+            </article>
+            <article class="finding">
+              <strong>65.6 / 66.3</strong>
+              <span>best T / R scores</span>
+              <p>Even the strongest setting leaves about one third of required behavior unsatisfied.</p>
+            </article>
+          </div>
+
+          <div class="table-scroll leaderboard-wrap" role="region" aria-label="WebRISE main leaderboard" tabindex="0">
+            <table class="leaderboard-table">
+              <colgroup>
+                <col class="model-col">
+                <col span="15" class="metric-col">
+                <col class="overall-col">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th rowspan="2">Model</th>
+                  <th colspan="3">Text</th>
+                  <th colspan="3">MD</th>
+                  <th colspan="3">Sketch</th>
+                  <th colspan="3">Image</th>
+                  <th colspan="3">Video</th>
+                  <th rowspan="2">Overall</th>
+                </tr>
+                <tr>
+                  <th>T</th><th>R</th><th>V</th>
+                  <th>T</th><th>R</th><th>V</th>
+                  <th>T</th><th>R</th><th>V</th>
+                  <th>T</th><th>R</th><th>V</th>
+                  <th>T</th><th>R</th><th>V</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="group-row"><td colspan="17">Open-weight models</td></tr>
+                <tr><td>Qwen3.6-35B-A3B</td><td>26.8</td><td>30.5</td><td>78.2</td><td>15.5</td><td>19.2</td><td>80.8</td><td>41.2</td><td>45.4</td><td>77.0</td><td>46.6</td><td>49.6</td><td>71.7</td><td>49.5</td><td>52.2</td><td>72.8</td><td>50.5</td></tr>
+                <tr><td>Qwen3.5-122B-A10B</td><td>38.0</td><td>41.2</td><td>56.8</td><td>42.5</td><td>45.9</td><td>72.0</td><td>38.0</td><td>42.3</td><td>74.0</td><td>40.2</td><td>43.8</td><td>70.7</td><td>42.8</td><td>47.1</td><td>71.3</td><td>51.1</td></tr>
+                <tr><td>Qwen3.5-27B</td><td>36.3</td><td>40.0</td><td>59.9</td><td>41.7</td><td>45.5</td><td>72.1</td><td>38.6</td><td>42.7</td><td>76.8</td><td>42.6</td><td>46.7</td><td>70.6</td><td>43.1</td><td>46.9</td><td>71.8</td><td>51.7</td></tr>
+                <tr><td>Qwen3.5-397B-A17B</td><td>45.7</td><td>49.2</td><td>64.8</td><td>51.1</td><td>54.5</td><td>75.7</td><td>46.8</td><td>50.5</td><td>78.9</td><td>48.4</td><td>51.4</td><td>72.8</td><td>49.3</td><td>52.8</td><td>72.1</td><td>57.6</td></tr>
+                <tr><td>Kimi-K2.5</td><td>48.5</td><td>51.9</td><td>68.9</td><td>57.0</td><td>59.6</td><td>73.8</td><td>47.8</td><td>50.4</td><td>79.9</td><td>56.9</td><td>59.1</td><td>72.6</td><td>58.6</td><td>60.3</td><td>72.9</td><td>61.2</td></tr>
+                <tr><td>Qwen3.6-27B</td><td>47.9</td><td>50.9</td><td>75.3</td><td>57.5</td><td>60.1</td><td>83.0</td><td>50.4</td><td>53.3</td><td>87.2</td><td>55.2</td><td>57.8</td><td>74.1</td><td>54.2</td><td>57.2</td><td>74.1</td><td>62.5</td></tr>
+                <tr><td>Kimi-K2.6</td><td>44.6</td><td>47.3</td><td>83.1</td><td>51.7</td><td>54.9</td><td>87.1</td><td>47.8</td><td>51.5</td><td>86.3</td><td>58.5</td><td>60.4</td><td>73.2</td><td>63.7</td><td>65.4</td><td>73.5</td><td>63.3</td></tr>
+                <tr class="group-row"><td colspan="17">Proprietary models</td></tr>
+                <tr><td>Claude Opus 4.6</td><td>43.3</td><td>45.5</td><td>56.6</td><td>54.3</td><td>56.3</td><td>73.9</td><td>52.3</td><td>55.0</td><td>72.2</td><td>57.7</td><td>59.5</td><td>70.2</td><td>52.6</td><td>54.9</td><td>70.7</td><td>58.3</td></tr>
+                <tr><td>Gemini 3 Flash</td><td>44.7</td><td>48.2</td><td>71.9</td><td>50.0</td><td>54.1</td><td>79.3</td><td>46.1</td><td>49.3</td><td>85.4</td><td>54.1</td><td>57.5</td><td>72.4</td><td>45.6</td><td>48.5</td><td>70.8</td><td>58.5</td></tr>
+                <tr><td>Claude Opus 4.7</td><td>48.8</td><td>50.9</td><td>68.3</td><td>54.5</td><td>56.5</td><td>76.2</td><td>49.7</td><td>52.4</td><td>77.4</td><td>57.0</td><td>58.5</td><td>70.5</td><td>65.0</td><td>66.1</td><td>72.7</td><td>61.6</td></tr>
+                <tr><td>Gemini 3.1 Pro</td><td>50.7</td><td>53.6</td><td>69.7</td><td>58.9</td><td>61.5</td><td>79.2</td><td>52.2</td><td>54.9</td><td>84.8</td><td>54.5</td><td>57.1</td><td>72.2</td><td>52.0</td><td>54.9</td><td>71.6</td><td>61.9</td></tr>
+                <tr><td>Qwen3.6-Plus</td><td>49.3</td><td>51.9</td><td>68.2</td><td>51.7</td><td>54.6</td><td>74.5</td><td>53.8</td><td>56.4</td><td>86.3</td><td>57.5</td><td>59.4</td><td>73.8</td><td>61.7</td><td>63.4</td><td>74.8</td><td>62.5</td></tr>
+                <tr><td>GPT-5.4</td><td>59.7</td><td>61.4</td><td>78.4</td><td>60.5</td><td>62.2</td><td>79.8</td><td>57.8</td><td>60.3</td><td>86.6</td><td>60.0</td><td>62.1</td><td>71.5</td><td>63.1</td><td>64.8</td><td>73.7</td><td>66.8</td></tr>
+                <tr><td>GPT-5.5</td><td>60.3</td><td>62.3</td><td>85.6</td><td>64.4</td><td>66.1</td><td>83.3</td><td>60.6</td><td>62.9</td><td>86.1</td><td>61.8</td><td>63.4</td><td>74.1</td><td>65.6</td><td>66.3</td><td>73.9</td><td>69.1</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="table-note">
+            Bold and underline denote the best and second-best result within each model group.
+          </p>
+        </div>
+      </section>
+
+      <section id="citation" class="section">
+        <div class="container citation-layout">
+          <div>
+            <p class="section-kicker">Citation</p>
+            <h2>Cite WebRISE</h2>
+            <p>
+              Replace the placeholder fields after the arXiv version is public.
+              The citation block is ready for the project homepage.
+            </p>
+          </div>
+
+          <div class="citation-box">
+            <button class="copy-button" type="button" data-copy-target="bibtex">Copy</button>
+            <pre id="bibtex"><code>@misc{webrise2026,
+  title = {WebRISE: Requirement-Induced State Evaluation for MLLM-Generated Web Artifacts},
+  author = {Anonymous},
+  year = {2026},
+  eprint = {XXXX.XXXXX},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL}
+}</code></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <span>WebRISE</span>
+        <span>Requirement-induced state evaluation for generated web artifacts.</span>
+      </div>
+    </footer>
+
+    <script>
+      const leaderboard = document.querySelector(".leaderboard-table");
+      if (leaderboard && leaderboard.tBodies.length) {
+        const rows = Array.from(leaderboard.tBodies[0].rows);
+        let groupRows = [];
+
+        const markGroupRanks = (rowsInGroup) => {
+          if (!rowsInGroup.length) return;
+          const columnCount = rowsInGroup[0].cells.length;
+
+          for (let columnIndex = 1; columnIndex < columnCount; columnIndex += 1) {
+            const entries = rowsInGroup
+              .map((row) => ({
+                cell: row.cells[columnIndex],
+                value: Number.parseFloat(row.cells[columnIndex].textContent)
+              }))
+              .filter((entry) => Number.isFinite(entry.value));
+
+            const values = Array.from(new Set(entries.map((entry) => entry.value)))
+              .sort((a, b) => b - a);
+            const best = values[0];
+            const second = values[1];
+
+            entries.forEach((entry) => {
+              if (entry.value === best) {
+                entry.cell.classList.add("rank-best");
+              } else if (entry.value === second) {
+                entry.cell.classList.add("rank-second");
+              }
+            });
+          }
+        };
+
+        rows.forEach((row) => {
+          if (row.classList.contains("group-row")) {
+            markGroupRanks(groupRows);
+            groupRows = [];
+          } else {
+            groupRows.push(row);
+          }
+        });
+        markGroupRanks(groupRows);
+      }
+
+      const copyButton = document.querySelector("[data-copy-target]");
+      if (copyButton) {
+        copyButton.addEventListener("click", async () => {
+          const targetId = copyButton.getAttribute("data-copy-target");
+          const target = document.getElementById(targetId);
+          if (!target) return;
+
+          await navigator.clipboard.writeText(target.innerText.trim());
+          copyButton.textContent = "Copied";
+          setTimeout(() => {
+            copyButton.textContent = "Copy";
+          }, 1600);
+        });
+      }
+    </script>
+  </body>
+</html>
