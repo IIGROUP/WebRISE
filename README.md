@@ -1,7 +1,7 @@
 # WebRISE: Requirement-Induced State Evaluation for MLLM-Generated Web Artifacts
 
 [![Project Page](https://img.shields.io/badge/Project-Page-2f64c8)](https://iigroup.github.io/WebRISE/)
-[![arXiv](https://img.shields.io/badge/arXiv-TBD-b31b1b.svg)](#)
+[![arXiv](https://img.shields.io/badge/arXiv-2606.03220-b31b1b.svg)](https://arxiv.org/abs/2606.03220)
 [![Hugging Face](https://img.shields.io/badge/HuggingFace-Dataset-ffcc4d)](https://huggingface.co/datasets/IIGroup/WebRISE)
 
 **WebRISE** is a benchmark for evaluating whether MLLM-generated web artifacts actually work, rather than only look plausible. WebRISE compiles task requirements into Interaction Contract Graphs (ICGs) of observable UI states, user-intent transitions, and DOM/visual assertions, then evaluates generated HTML pages through browser execution.
@@ -180,4 +180,13 @@ python generation/gen_input/build_video_inputs.py \
 If you use WebRISE in your research, please cite our paper:
 
 ```bibtex
+@misc{meng2026webriserequirementinducedstateevaluation,
+      title={WebRISE: Requirement-Induced State Evaluation for MLLM-Generated Web Artifacts}, 
+      author={Yuxin Meng and Yuhan Suo and Junjie Wang and Yuhan Sun and Yiyao Yu and Ruixu Zhang and Ruining Hu and Yubin Wang and Shouwei Ruan and Bin Wang and Yuxiang Zhang and Yujiu Yang},
+      year={2026},
+      eprint={2606.03220},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2606.03220}, 
+}
 ```
