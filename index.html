@@ -556,23 +556,6 @@ figcaption {
   border-bottom: 0;
 }
 
-.comparison-table .yes {
-  color: var(--teal);
-  font-weight: 900;
-  text-align: center;
-}
-
-.comparison-table .no {
-  color: var(--coral);
-  font-weight: 900;
-  text-align: center;
-}
-
-.comparison-table .ours td {
-  background: #eef7f4;
-  font-weight: 760;
-}
-
 .leaderboard-wrap {
   margin-top: 10px;
 }
@@ -825,7 +808,6 @@ pre {
         <a href="#benchmark">Benchmark</a>
         <a href="#overview">Overview</a>
         <a href="#pipeline">Pipeline</a>
-        <a href="#comparison">Comparison</a>
         <a href="#leaderboard">Leaderboard</a>
         <a href="#citation">Citation</a>
       </nav>
@@ -981,89 +963,6 @@ pre {
               how to realize each transition on the generated page.
             </figcaption>
           </figure>
-        </div>
-      </section>
-
-      <section id="comparison" class="section section-contrast">
-        <div class="container">
-          <div class="section-heading">
-            <p class="section-kicker">Benchmark Comparison</p>
-            <h2>WebRISE adds requirement-induced state semantics.</h2>
-            <p>
-              Compared with prior web generation benchmarks, WebRISE jointly
-              covers multimodal inputs, interaction, visual evidence, safety
-              diagnostics, and explicit plus implicit requirement checks.
-            </p>
-          </div>
-
-          <div class="table-scroll" role="region" aria-label="Comparison with related benchmarks" tabindex="0">
-            <table class="comparison-table">
-              <thead>
-                <tr>
-                  <th>Benchmark</th>
-                  <th>Verified Units</th>
-                  <th>Main Verdict</th>
-                  <th>Interact.</th>
-                  <th>Vision</th>
-                  <th>Safety</th>
-                  <th>Exp. Req</th>
-                  <th>Imp. Req</th>
-                  <th>Input Modality</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>WebCoderBench</td>
-                  <td>1,572 reqs; 24 metrics</td>
-                  <td>Static evaluation</td>
-                  <td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td>
-                  <td>2: Text, Image</td>
-                </tr>
-                <tr>
-                  <td>VibeCodeBench</td>
-                  <td>100 apps; 964 workflows</td>
-                  <td>Browser agent</td>
-                  <td class="yes">✓</td><td class="no">✕</td><td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td>
-                  <td>1: Text</td>
-                </tr>
-                <tr>
-                  <td>Interaction2Code</td>
-                  <td>127 pages; 374 interactions</td>
-                  <td>Human evaluation</td>
-                  <td class="yes">✓</td><td class="yes">✓</td><td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td>
-                  <td>1: Image</td>
-                </tr>
-                <tr>
-                  <td>FrontendBench</td>
-                  <td>148 tasks</td>
-                  <td>Script assertion</td>
-                  <td class="yes">✓</td><td class="no">✕</td><td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td>
-                  <td>1: Text</td>
-                </tr>
-                <tr>
-                  <td>WebGen-Bench</td>
-                  <td>101 instr.; 647 cases</td>
-                  <td>Checkpoint</td>
-                  <td class="yes">✓</td><td class="yes">✓</td><td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td>
-                  <td>1: Text</td>
-                </tr>
-                <tr>
-                  <td>IWR-Bench</td>
-                  <td>113 tasks; 1,001 acts; 403 asserts</td>
-                  <td>MLLM assertion</td>
-                  <td class="yes">✓</td><td class="yes">✓</td><td class="no">✕</td><td class="yes">✓</td><td class="no">✕</td>
-                  <td>1: Video</td>
-                </tr>
-                <tr class="ours">
-                  <td>WebRISE</td>
-                  <td>442 tasks; 5,271 reqs; 5,081 states; 5,495 trans.; 12,441 asserts</td>
-                  <td>DOM/VLM assertion</td>
-                  <td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td>
-                  <td>5: Text, Markdown, Sketch, Image, Video</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
         </div>
       </section>
 
